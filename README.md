@@ -4,6 +4,20 @@ Extension of stochastic geometry neural volume rendering to calibrated multi-vie
 
 ---
 
+## ⚡ Instant 3D Mesh Generation (Fast Inference)
+
+Extract the complete 3D polygon mesh from the trained 300,000-step checkpoint (`ckpt_300000.pth`) in **~1 second** on Apple Silicon (`mps`) or CPU without downloading raw dome datasets or running raymarching:
+
+```bash
+# Standard 3D polygon mesh extraction (128^3 resolution, ~1.1s):
+python3 generate_mesh.py --resolution 128 --output human_head_mesh.ply
+
+# Ultra-fine high-resolution mesh (256^3 resolution, ~6s):
+python3 generate_mesh.py --resolution 256 --output human_head_256.ply
+```
+
+---
+
 ## ⚡ Key Highlights
 
 ### 1. Multi-Camera Dome Calibration & Normalization (`prepare_multiface.py`)
