@@ -19,6 +19,11 @@ except ImportError:
     mcubes = None
 
 try:
+    from skimage.measure import marching_cubes as skimage_mcubes
+except ImportError:
+    skimage_mcubes = None
+
+try:
     import trimesh
 except ImportError:
     trimesh = None
@@ -138,8 +143,15 @@ def extract_mesh(sdf_net, device, resolution=128, threshold=0.0):
     t_mc = time.time()
     if mcubes is not None:
         vertices, triangles = mcubes.marching_cubes(u, threshold)
+    elif skimage_mcubes is not None:
+        vertices, triangles, _, _ = skimage_mcubes(u, level=threshold)
     else:
-        raise ImportError("PyMCubes is required: pip install PyMCubes")
+        raise ImportError(
+            "Marching Cubes library not found. Please install either:\n"
+            "  pip install PyMCubes\n"
+            "or (pre-compiled, no C++ toolchain needed):\n"
+            "  pip install scikit-image"
+        )
 
     # Rescale vertices back to world coordinates
     b_max_min = bound_max - bound_min

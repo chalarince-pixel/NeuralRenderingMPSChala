@@ -16,6 +16,13 @@ python3 generate_mesh.py --resolution 128 --output human_head_mesh.ply
 python3 generate_mesh.py --resolution 256 --output human_head_256.ply
 ```
 
+> **Minimal Inference Dependencies (runs on any 8GB+ Mac):**
+> ```bash
+> pip install torch trimesh PyMCubes
+> # or zero-compile alternative:
+> pip install torch trimesh scikit-image
+> ```
+
 ---
 
 ## ⚡ Key Highlights
