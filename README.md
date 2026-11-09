@@ -32,6 +32,26 @@ To maintain clean separation between research iterations, **the `main` branch co
 
 ---
 
+## ⚡ Fast 3D Mesh Extraction (Cheapest Inference Across Branches)
+
+Every branch includes standalone inference scripts allowing any user who forks the repo to extract full 3D polygon meshes or point clouds directly from trained weights in **~1 second** without needing raw datasets, camera matrices, or expensive ray marching:
+
+```bash
+# 🌿 Branch 1: Extract 3D Scene Geometry from NeRF/LoRA safetensors (~0.5s)
+git checkout v1-baseline-nerf-mps
+python3 extract_mesh.py --checkpoint checkpoints/base_model.safetensors --output exports/scene.ply
+
+# 🌳 Branch 2: Extract 3D Ficus Tree Mesh from 300k SDF weights (~1.1s)
+git checkout v2-cmu-volumetric-sdf
+python3 inference/generate_mesh.py --resolution 128 --output ficus_mesh.ply
+
+# 👤 Branch 3: Extract 3D Human Head Mesh from 300k Meta Dome weights (~1.1s)
+git checkout v3-human-multiface
+python3 generate_mesh.py --resolution 128 --output human_head.ply
+```
+
+---
+
 ## 🚀 Branch Quick Access
 
 ### 1. [`v1-baseline-nerf-mps`](https://github.com/chalarince-pixel/NeuralRenderingMPSChala/tree/v1-baseline-nerf-mps)
