@@ -1,0 +1,4 @@
+# Universal Cross-Platform 3D Geometry Extraction (Inference)
+torch>=2.0.0
+numpy>=1.20.0
+safetensors>=0.4.0
