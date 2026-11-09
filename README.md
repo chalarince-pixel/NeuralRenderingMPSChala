@@ -4,6 +4,23 @@ Replication of Carnegie Mellon University's CVPR formulation (*"Objects as volum
 
 ---
 
+## ⚡ Instant 3D Mesh Generation (Fast Inference)
+
+Extract the complete 3D polygon mesh from the trained 300,000-step checkpoint (`ficus_model_300k.pth`) in **~1.1s** on Apple Silicon (`mps`) or CPU without downloading raw datasets or running raymarching:
+
+```bash
+# Standard 3D polygon mesh extraction (128^3 resolution, ~1.1s):
+python3 inference/generate_mesh.py --resolution 128 --output ficus_mesh.ply
+
+# Ultra-fine micro-leaf mesh (256^3 resolution, ~6.3s):
+python3 inference/generate_mesh.py --resolution 256 --output ficus_256.ply
+
+# Real-time 120 FPS Native Apple Metal Viewer (Swift):
+swift inference/apple_metal_viewer.swift ficus_mesh.ply
+```
+
+---
+
 ## ⚡ Key Highlights
 
 ### 1. CMU / NeuS Surface-Finding SDF Pipeline
