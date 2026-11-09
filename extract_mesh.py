@@ -101,18 +101,34 @@ def extract_point_cloud(
     print(f"Saved extracted 3D point cloud mesh to: {filepath}")
 
 
+def get_optimal_device(requested_device: str = "auto") -> torch.device:
+    """Auto-detects best available compute hardware across macOS, Linux, Windows, and Raspberry Pi."""
+    if requested_device != "auto":
+        return torch.device(requested_device)
+    if torch.cuda.is_available():
+        device = torch.device("cuda")
+        print(f"Compute Backend: NVIDIA CUDA GPU ({torch.cuda.get_device_name(0)})")
+    elif hasattr(torch.backends, "mps") and torch.backends.mps.is_available():
+        device = torch.device("mps")
+        print("Compute Backend: Apple Silicon Unified Memory GPU (Metal MPS)")
+    else:
+        device = torch.device("cpu")
+        print("Compute Backend: CPU (Host system / Raspberry Pi / x86 / ARM64)")
+    return device
+
+
 def main():
     parser = argparse.ArgumentParser(description="Extract 3D Geometry from NeRF/LoRA safetensors")
     parser.add_argument("--checkpoint", type=str, default="checkpoints/base_model.safetensors", help="Path to base model .safetensors")
     parser.add_argument("--lora", type=str, default=None, help="Optional path to lora_adapter.safetensors")
     parser.add_argument("--resolution", type=int, default=64, help="Grid resolution (e.g. 64 for 262k points, 100 for 1M points)")
+    parser.add_argument("--chunk_size", type=int, default=32768, help="Batch chunk size for memory management (use 8192 for low-RAM/Raspberry Pi)")
     parser.add_argument("--threshold", type=float, default=5.0, help="Density threshold for surface extraction")
+    parser.add_argument("--device", type=str, default="auto", choices=["auto", "cuda", "mps", "cpu"], help="Compute device")
     parser.add_argument("--output", type=str, default="exports/scene_geometry.ply", help="Output path (.ply)")
     args = parser.parse_args()
 
-    device = torch.device("mps" if torch.backends.mps.is_available() else "cpu")
-    print(f"Running inference on: {device}")
-
+    device = get_optimal_device(args.device)
     model = load_model(args.checkpoint, args.lora, device=device)
     extract_point_cloud(
         model=model,

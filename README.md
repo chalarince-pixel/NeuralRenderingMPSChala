@@ -4,16 +4,27 @@ A high-performance PyTorch baseline connecting **Neural Radiance Fields (Neural 
 
 ---
 
-## ⚡ Instant 3D Geometry Extraction (Fast Inference)
+## ⚡ Instant 3D Geometry Extraction (Cross-Platform Inference)
 
-Extract colored 3D point cloud surface geometry on the fly from `.safetensors` checkpoints in **~0.5s** on Apple Silicon (`mps`) or CPU:
+Extract colored 3D point cloud surface geometry on the fly from `.safetensors` checkpoints on **macOS, Linux, Windows, or Raspberry Pi OS**:
 
 ```bash
-# Extract 3D geometry from base model safetensors:
+# macOS (Apple Silicon MPS - ~0.5s):
 python3 extract_mesh.py --checkpoint checkpoints/base_model.safetensors --output exports/scene_geometry.ply
 
-# Extract 3D geometry with LoRA fine-tuning adapter applied:
+# Linux / Windows (NVIDIA CUDA GPU):
+python3 extract_mesh.py --checkpoint checkpoints/base_model.safetensors --output exports/scene_geometry.ply
+
+# Raspberry Pi OS / Low-Memory CPU (chunking, <30MB RAM):
+python3 extract_mesh.py --checkpoint checkpoints/base_model.safetensors --resolution 40 --chunk_size 8192 --device cpu --output exports/scene_geometry.ply
+
+# Extract with LoRA domain adaptation applied (Summer -> Autumn foliage):
 python3 extract_mesh.py --checkpoint checkpoints/base_model.safetensors --lora checkpoints/lora_adapter.safetensors --output exports/lora_geometry.ply
+```
+
+### 📦 Minimal Cross-Platform Dependencies
+```bash
+pip install torch safetensors
 ```
 
 ---
