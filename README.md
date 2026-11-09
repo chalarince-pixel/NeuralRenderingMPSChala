@@ -32,22 +32,33 @@ To maintain clean separation between research iterations, **the `main` branch co
 
 ---
 
-## ⚡ Fast 3D Mesh Extraction (Cheapest Inference Across Branches)
+## ⚡ Universal Cross-Platform 3D Mesh Extraction (Cheapest Inference)
 
-Every branch includes standalone inference scripts allowing any user who forks the repo to extract full 3D polygon meshes or point clouds directly from trained weights in **~1 second** without needing raw datasets, camera matrices, or expensive ray marching:
+Every branch includes standalone inference scripts allowing anyone who forks the repo to extract full 3D polygon meshes directly from trained weights on **macOS (Apple Silicon / Intel), Linux (CUDA / CPU), Windows (CUDA / CPU), and Raspberry Pi OS (ARM64)** in **~1 second** without needing camera datasets, raw images, or training libraries:
 
 ```bash
-# 🌿 Branch 1: Extract 3D Scene Geometry from NeRF/LoRA safetensors (~0.5s)
+# 🌿 Branch 1: Extract 3D Geometry from NeRF/LoRA safetensors
 git checkout v1-baseline-nerf-mps
 python3 extract_mesh.py --checkpoint checkpoints/base_model.safetensors --output exports/scene.ply
 
-# 🌳 Branch 2: Extract 3D Ficus Tree Mesh from 300k SDF weights (~1.1s)
+# 🌳 Branch 2: Extract 3D Ficus Tree Mesh from 300k SDF weights
 git checkout v2-cmu-volumetric-sdf
 python3 inference/generate_mesh.py --resolution 128 --output ficus_mesh.ply
 
-# 👤 Branch 3: Extract 3D Human Head Mesh from 300k Meta Dome weights (~1.1s)
+# 👤 Branch 3: Extract 3D Human Head Mesh from 300k Meta Dome weights
 git checkout v3-human-multiface
 python3 generate_mesh.py --resolution 128 --output human_head.ply
+
+# 🍓 Running on Raspberry Pi OS / Low-Memory Systems (<40MB RAM):
+python3 generate_mesh.py --resolution 64 --chunk_size 32 --device cpu --output mesh.ply
+```
+
+### 📦 Minimal Cross-Platform Dependencies (Inference Only)
+No C++ compiler or heavy dependencies needed:
+```bash
+pip install torch scikit-image safetensors
+# Optional (for OBJ format export):
+pip install trimesh
 ```
 
 ---
