@@ -4,19 +4,30 @@ Replication of Carnegie Mellon University's CVPR formulation (*"Objects as volum
 
 ---
 
-## ⚡ Instant 3D Mesh Generation (Fast Inference)
+## ⚡ Instant 3D Mesh Generation (Cross-Platform Inference)
 
-Extract the complete 3D polygon mesh from the trained 300,000-step checkpoint (`ficus_model_300k.pth`) in **~1.1s** on Apple Silicon (`mps`) or CPU without downloading raw datasets or running raymarching:
+Extract the complete 3D polygon mesh from the trained 300,000-step checkpoint (`ficus_model_300k.pth`) on **macOS, Linux, Windows, or Raspberry Pi OS** without downloading raw datasets or running raymarching:
 
 ```bash
-# Standard 3D polygon mesh extraction (128^3 resolution, ~1.1s):
+# macOS (Apple Silicon MPS - ~1.1s):
 python3 inference/generate_mesh.py --resolution 128 --output ficus_mesh.ply
 
-# Ultra-fine micro-leaf mesh (256^3 resolution, ~6.3s):
-python3 inference/generate_mesh.py --resolution 256 --output ficus_256.ply
+# Linux / Windows (NVIDIA CUDA GPU - ~0.8s):
+python3 inference/generate_mesh.py --resolution 128 --output ficus_mesh.ply
 
-# Real-time 120 FPS Native Apple Metal Viewer (Swift):
+# Raspberry Pi OS / Low-Memory CPU (using chunking, <40MB RAM):
+python3 inference/generate_mesh.py --resolution 64 --chunk_size 32 --device cpu --output ficus_mesh.ply
+
+# Real-time 120 FPS Native Apple Metal Viewer (macOS Swift):
 swift inference/apple_metal_viewer.swift ficus_mesh.ply
+```
+
+### 📦 Minimal Cross-Platform Dependencies
+Only 2 packages required (zero C++ compilation needed):
+```bash
+pip install torch scikit-image
+# (Optional for OBJ format export):
+pip install trimesh
 ```
 
 ---
