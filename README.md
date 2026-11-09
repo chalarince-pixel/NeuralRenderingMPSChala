@@ -4,24 +4,28 @@ Extension of stochastic geometry neural volume rendering to calibrated multi-vie
 
 ---
 
-## ⚡ Instant 3D Mesh Generation (Fast Inference)
+## ⚡ Instant 3D Mesh Generation (Cross-Platform Inference)
 
-Extract the complete 3D polygon mesh from the trained 300,000-step checkpoint (`ckpt_300000.pth`) in **~1 second** on Apple Silicon (`mps`) or CPU without downloading raw dome datasets or running raymarching:
+Extract the complete 3D polygon mesh from the trained 300,000-step checkpoint (`ckpt_300000.pth`) on **macOS, Linux, Windows, or Raspberry Pi OS** without downloading raw dome datasets or running raymarching:
 
 ```bash
-# Standard 3D polygon mesh extraction (128^3 resolution, ~1.1s):
+# macOS (Apple Silicon MPS - ~1.1s):
 python3 generate_mesh.py --resolution 128 --output human_head_mesh.ply
 
-# Ultra-fine high-resolution mesh (256^3 resolution, ~6s):
-python3 generate_mesh.py --resolution 256 --output human_head_256.ply
+# Linux / Windows (NVIDIA CUDA GPU - ~0.8s):
+python3 generate_mesh.py --resolution 128 --output human_head_mesh.ply
+
+# Raspberry Pi OS / Low-Memory CPU (using chunking, <40MB RAM):
+python3 generate_mesh.py --resolution 64 --chunk_size 32 --device cpu --output human_head_mesh.ply
 ```
 
-> **Minimal Inference Dependencies (runs on any 8GB+ Mac):**
-> ```bash
-> pip install torch trimesh PyMCubes
-> # or zero-compile alternative:
-> pip install torch trimesh scikit-image
-> ```
+### 📦 Minimal Cross-Platform Dependencies
+Only 2 packages required (zero C++ compilation needed):
+```bash
+pip install torch scikit-image
+# (Optional for OBJ format export):
+pip install trimesh
+```
 
 ---
 

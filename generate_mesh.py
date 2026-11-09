@@ -1,9 +1,18 @@
 #!/usr/bin/env python3
 """
-Standalone 3D Human Head Mesh Generation Inference Script.
-Extracts zero-crossing polygon meshes (.ply / .obj) in ~1 second on Apple Silicon (mps) or CPU
-from the trained 300,000-step neural Signed Distance Field weights.
-No camera datasets, raymarching, or training dependencies required.
+Universal Cross-Platform 3D Mesh Generation Inference Script.
+Extracts zero-crossing polygon meshes (.ply / .obj) from trained neural SDF checkpoints.
+
+Cross-Platform Compatibility:
+- macOS (Apple Silicon MPS / Intel CPU)
+- Linux (NVIDIA CUDA / CPU)
+- Windows (NVIDIA CUDA / CPU)
+- Raspberry Pi OS / ARM Linux (CPU, low-memory chunking)
+
+Dependencies:
+  pip install torch
+  pip install scikit-image  # (or pip install PyMCubes)
+  pip install trimesh       # (optional, for .obj export)
 """
 import os
 import sys
@@ -13,6 +22,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 
+# --- Dual-Engine Marching Cubes (PyMCubes or pre-compiled scikit-image) ---
 try:
     import mcubes
 except ImportError:
@@ -23,6 +33,7 @@ try:
 except ImportError:
     skimage_mcubes = None
 
+# Optional mesh export library (script has built-in PLY exporter if trimesh is missing)
 try:
     import trimesh
 except ImportError:
@@ -46,9 +57,9 @@ class Embedder:
 
 class SDFNetwork(nn.Module):
     """
-    8-layer MLP with geometric initialization and skip connections at layer 4,
-    mapping 3D coordinate (x, y, z) -> Signed Distance S(x).
-    Surface boundary is the zero-level isosurface: S(x) = 0.
+    Universal 8-layer MLP with geometric initialization and skip connection at layer 4.
+    Maps 3D coordinate (x, y, z) -> Signed Distance S(x).
+    Physical surface boundary is the zero-level set: S(x) = 0.
     """
     def __init__(self, d_in=3, d_out=257, d_hidden=256, n_layers=8, skip_in=(4,), multires=6):
         super(SDFNetwork, self).__init__()
@@ -89,33 +100,64 @@ DEFAULT_CKPT = os.path.join(
 )
 
 
-def load_sdf_model(checkpoint_path, device):
-    """Instantiate SDF Network and load trained tensors."""
+def get_optimal_device(requested_device: str = "auto") -> torch.device:
+    """Auto-detects best available compute hardware across macOS, Linux, Windows, and Raspberry Pi."""
+    if requested_device != "auto":
+        return torch.device(requested_device)
+
+    if torch.cuda.is_available():
+        device = torch.device("cuda")
+        device_name = torch.cuda.get_device_name(0)
+        print(f"Compute Backend: NVIDIA CUDA GPU ({device_name})")
+    elif hasattr(torch.backends, "mps") and torch.backends.mps.is_available():
+        device = torch.device("mps")
+        print("Compute Backend: Apple Silicon Unified Memory GPU (Metal MPS)")
+    else:
+        device = torch.device("cpu")
+        print("Compute Backend: CPU (Host system / Raspberry Pi / x86 / ARM64)")
+    return device
+
+
+def load_sdf_model(checkpoint_path: str, device: torch.device) -> nn.Module:
+    """Instantiate SDF Network and load trained tensors onto target device."""
     if not os.path.exists(checkpoint_path):
         raise FileNotFoundError(f"Checkpoint not found at: {checkpoint_path}")
 
-    print(f"Loading checkpoint from: {checkpoint_path}")
+    print(f"Loading checkpoint: {checkpoint_path}")
     sdf_net = SDFNetwork().to(device)
 
+    # weights_only=False ensures PyTorch 2.4+ loads legacy dictionary archives
     ckpt = torch.load(checkpoint_path, map_location=device, weights_only=False)
-    if 'sdf_network_fine' in ckpt:
-        sdf_net.load_state_dict(ckpt['sdf_network_fine'])
-    else:
+    if isinstance(ckpt, dict) and "sdf_network_fine" in ckpt:
+        sdf_net.load_state_dict(ckpt["sdf_network_fine"])
+    elif isinstance(ckpt, dict):
         sdf_net.load_state_dict(ckpt)
+    else:
+        raise ValueError(f"Unrecognized checkpoint format in: {checkpoint_path}")
+
     sdf_net.eval()
-    print("SDF Network loaded successfully.")
+    print("SDF Network weights loaded successfully.")
     return sdf_net
 
 
-def extract_mesh(sdf_net, device, resolution=128, threshold=0.0):
-    """Queries neural SDF across a 3D coordinate bounding box and extracts polygon surface."""
+def extract_mesh(
+    sdf_net: nn.Module,
+    device: torch.device,
+    resolution: int = 128,
+    chunk_size: int = 64,
+    threshold: float = 0.0
+):
+    """
+    Queries neural SDF across a 3D coordinate bounding box and extracts polygon surface.
+    Memory-efficient chunking ensures compatibility with low-RAM devices (e.g. Raspberry Pi).
+    """
     bound_min = np.array([-1.01, -1.01, -1.01], dtype=np.float32)
     bound_max = np.array([ 1.01,  1.01,  1.01], dtype=np.float32)
 
-    print(f"Evaluating neural field on {resolution}x{resolution}x{resolution} grid ({resolution**3:,} points) on {device}...")
+    total_points = resolution ** 3
+    print(f"Evaluating grid: {resolution}^3 ({total_points:,} query points), chunk size: {chunk_size}^3 points...")
     t0 = time.time()
 
-    chunk_size = 64
     xs = torch.linspace(bound_min[0], bound_max[0], resolution, device=device).split(chunk_size)
     ys = torch.linspace(bound_min[1], bound_max[1], resolution, device=device).split(chunk_size)
     zs = torch.linspace(bound_min[2], bound_max[2], resolution, device=device).split(chunk_size)
@@ -137,23 +179,23 @@ def extract_mesh(sdf_net, device, resolution=128, threshold=0.0):
                       zi*chunk_size : zi*chunk_size + len(z_chunk)] = chunk_vals
 
     t_eval = time.time() - t0
-    print(f"GPU forward pass completed in {t_eval:.2f}s.")
+    print(f"Neural field forward pass completed in {t_eval:.2f}s.")
 
-    # Marching Cubes
+    # Marching Cubes extraction
     t_mc = time.time()
     if mcubes is not None:
         vertices, triangles = mcubes.marching_cubes(u, threshold)
     elif skimage_mcubes is not None:
+        # scikit-image pre-compiled wheel for Linux / Windows / macOS / Raspberry Pi ARM64
         vertices, triangles, _, _ = skimage_mcubes(u, level=threshold)
     else:
         raise ImportError(
-            "Marching Cubes library not found. Please install either:\n"
-            "  pip install PyMCubes\n"
-            "or (pre-compiled, no C++ toolchain needed):\n"
-            "  pip install scikit-image"
+            "No Marching Cubes backend found! Please install one of the following:\n"
+            "  pip install scikit-image   (Recommended: Pre-built wheels for all platforms, no C++ compiler needed)\n"
+            "  pip install PyMCubes       (Alternative: Requires C++ compiler)"
         )
 
-    # Rescale vertices back to world coordinates
+    # Rescale vertices back to coordinate bounding box
     b_max_min = bound_max - bound_min
     vertices = vertices / (resolution - 1.0) * b_max_min + bound_min
     print(f"Marching Cubes extracted {len(vertices):,} vertices and {len(triangles):,} faces in {time.time() - t_mc:.2f}s.")
@@ -164,27 +206,15 @@ def extract_mesh(sdf_net, device, resolution=128, threshold=0.0):
     return vertices, triangles
 
 
-def main():
-    parser = argparse.ArgumentParser(description="Extract 3D Human Head Mesh from Neural SDF Checkpoint")
-    parser.add_argument("--checkpoint", type=str, default=DEFAULT_CKPT, help="Path to ckpt_300000.pth")
-    parser.add_argument("--resolution", type=int, default=128, help="3D grid resolution (64=fast preview, 128=standard, 256=highres)")
-    parser.add_argument("--output", type=str, default="human_head_mesh.ply", help="Output path (.ply or .obj)")
-    args = parser.parse_args()
-
-    device = torch.device('mps' if torch.backends.mps.is_available() else 'cpu')
-    print(f"Running on device: {device}")
-
-    sdf_net = load_sdf_model(args.checkpoint, device)
-    result = extract_mesh(sdf_net, device, resolution=args.resolution)
-
-    os.makedirs(os.path.dirname(os.path.abspath(args.output)), exist_ok=True)
-    if hasattr(result, "export"):
-        result.export(args.output)
-        print(f"Exported 3D mesh successfully to: {args.output}")
+def save_mesh(mesh_or_tuple, output_path: str):
+    """Exports extracted mesh to .ply or .obj, using trimesh or built-in ASCII writer."""
+    os.makedirs(os.path.dirname(os.path.abspath(output_path)), exist_ok=True)
+    if hasattr(mesh_or_tuple, "export"):
+        mesh_or_tuple.export(output_path)
+        print(f"Mesh exported via trimesh to: {output_path}")
     else:
-        vertices, triangles = result
-        # Write simple PLY
-        with open(args.output, "w") as f:
+        vertices, triangles = mesh_or_tuple
+        with open(output_path, "w") as f:
             f.write("ply\nformat ascii 1.0\n")
             f.write(f"element vertex {len(vertices)}\nproperty float x\nproperty float y\nproperty float z\n")
             f.write(f"element face {len(triangles)}\nproperty list uchar int vertex_indices\nend_header\n")
@@ -192,7 +222,22 @@ def main():
                 f.write(f"{v[0]:.6f} {v[1]:.6f} {v[2]:.6f}\n")
             for t in triangles:
                 f.write(f"3 {t[0]} {t[1]} {t[2]}\n")
-        print(f"Exported PLY mesh successfully to: {args.output}")
+        print(f"Mesh exported via built-in PLY writer to: {output_path}")
+
+
+def main():
+    parser = argparse.ArgumentParser(description="Universal Cross-Platform 3D Mesh Generator")
+    parser.add_argument("--checkpoint", type=str, default=DEFAULT_CKPT, help="Path to .pth checkpoint file")
+    parser.add_argument("--resolution", type=int, default=128, help="Grid resolution (64=fast/Raspberry Pi, 128=standard, 256=highres)")
+    parser.add_argument("--chunk_size", type=int, default=64, help="Chunk size for memory management (use 32 for low-RAM/Raspberry Pi)")
+    parser.add_argument("--device", type=str, default="auto", choices=["auto", "cuda", "mps", "cpu"], help="Compute device")
+    parser.add_argument("--output", type=str, default="human_head_mesh.ply", help="Output file path (.ply or .obj)")
+    args = parser.parse_args()
+
+    device = get_optimal_device(args.device)
+    sdf_net = load_sdf_model(args.checkpoint, device)
+    result = extract_mesh(sdf_net, device, resolution=args.resolution, chunk_size=args.chunk_size)
+    save_mesh(result, args.output)
 
 
 if __name__ == "__main__":
