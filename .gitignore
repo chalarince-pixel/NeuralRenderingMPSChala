@@ -1,0 +1,73 @@
+# ==========================================
+# Antigravity & OS Caches
+# ==========================================
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# ==========================================
+# Python / Environments
+# ==========================================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+build/
+dist/
+*.egg-info/
+
+# ==========================================
+# TensorBoard & Experiment Logs
+# ==========================================
+*.tfevents.*
+events.out.*
+**/logs/
+
+# ==========================================
+# Large Binary Archives (>100MB)
+# ==========================================
+*.zip
+*.tar
+*.tar.gz
+*.tgz
+*.7z
+
+# ==========================================
+# Heavy Raw Datasets & Intermediate Dumps
+# ==========================================
+data/nerf_synthetic/ficus/
+data/nerf_synthetic/lego/*.png
+cmu_reference/public_data/dtu.zip
+cmu_reference/public_data/dtu_scan114/
+cmu_reference/public_data/multiface_6795937/
+cmu_reference/public_data/nerf_ficus/
+cmu_reference/public_data/human_face_multiface/image/
+
+# ==========================================
+# Dense Intermediate Training Checkpoints (Keep only final weights if needed)
+# ==========================================
+cmu_reference/exp/**/checkpoints/
+cmu_reference/exp/**/recording/
+cmu_reference/exp/nerf_ficus/
+
+# Keep final human mesh in v3, ignore the thousands of intermediate validation dumps
+cmu_reference/exp/human_face_multiface/**/validations_fine/
+cmu_reference/exp/human_face_multiface/**/depth/
+cmu_reference/exp/human_face_multiface/**/normals/
+cmu_reference/exp/human_face_multiface/**/meshes/000*.ply
+cmu_reference/exp/human_face_multiface/**/meshes/001*.ply
+cmu_reference/exp/human_face_multiface/**/meshes/002*.ply
+
+# Oversized meshes (>50MB) - sample_ficus and ficus_256 are retained
+inference/ficus_1024.obj
+inference/ficus_1024.ply
+inference/inference/
+inference/apple_metal_viewer
