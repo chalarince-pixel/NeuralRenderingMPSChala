@@ -40,6 +40,8 @@ cmu_reference/
 ├── exp/
 │   └── human_face_multiface/      # Trained 300k human head mesh & validations
 │       └── gaussian_linearmixture_spatial_black/
+│           ├── checkpoints/
+│           │   └── ckpt_300000.pth # 9.2 MB (Final trained neural model weights)
 │           ├── depth/             # Viewpoint depth maps
 │           ├── meshes/            # 300k step reconstructed 3D polygon mesh (.ply)
 │           ├── normals/           # Viewpoint surface normal maps

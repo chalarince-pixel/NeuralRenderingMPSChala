@@ -54,7 +54,8 @@ cmu_reference/public_data/human_face_multiface/image/
 # ==========================================
 # Dense Intermediate Training Checkpoints (Keep only final weights if needed)
 # ==========================================
-cmu_reference/exp/**/checkpoints/
+cmu_reference/exp/**/checkpoints/*
+!cmu_reference/exp/**/checkpoints/ckpt_300000.pth
 cmu_reference/exp/**/recording/
 cmu_reference/exp/nerf_ficus/
 
