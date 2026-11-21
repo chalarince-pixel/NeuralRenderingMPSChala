@@ -1,7 +1,12 @@
 # NeuralRenderingMPSChala
 
-> **High-Performance Neural Rendering, Diffusion & 3D Surface Reconstruction on Apple Silicon (`mps`).**  
-> Benchmarked and optimized for Apple M4 Pro (24 GB Unified Memory).
+# ⚡ NeuralRenderingMPSChala
+[![Platform](https://img.shields.io/badge/Platform-Apple%20Silicon%20%7C%20Linux%20%7C%20Windows%20%7C%20Raspberry%20Pi-blue.svg)](#)
+[![PyTorch](https://img.shields.io/badge/PyTorch-2.1%2B%20(MPS%2FCUDA%2FCPU)-red.svg)](#)
+[![Inference Latency](https://img.shields.io/badge/3D%20Mesh%20Extraction-~1.1s-brightgreen.svg)](#)
+[![Branches](https://img.shields.io/badge/Architecture-3%20Independent%20Branches-orange.svg)](#)
+> **An exploration of Neural Radiance Fields (NeRF), Diffusion LoRA engines, and Stochastic Geometry Signed Distance Fields (SDF) built natively for Apple Silicon Unified Memory and cross-platform edge inference.**
+---
 
 ---
 
