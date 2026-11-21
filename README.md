@@ -1,5 +1,3 @@
-# NeuralRenderingMPSChala
-
 # ⚡ NeuralRenderingMPSChala
 [![Platform](https://img.shields.io/badge/Platform-Apple%20Silicon%20%7C%20Linux%20%7C%20Windows%20%7C%20Raspberry%20Pi-blue.svg)](#)
 [![PyTorch](https://img.shields.io/badge/PyTorch-2.1%2B%20(MPS%2FCUDA%2FCPU)-red.svg)](#)
