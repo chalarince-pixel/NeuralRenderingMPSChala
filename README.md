@@ -6,13 +6,19 @@ Extension of stochastic geometry neural volume rendering to calibrated multi-vie
 
 ## ⚡ Instant 3D Mesh Generation (Cross-Platform Inference)
 
-Extract the complete 3D polygon mesh from the trained 300,000-step checkpoint (`ckpt_300000.pth`) on **macOS, Linux, Windows, or Raspberry Pi OS** without downloading raw dome datasets or running raymarching:
+Extract the complete 3D polygon mesh from the trained neural SDF checkpoint (`checkpoints/human_head_model.safetensors` or `ckpt_300000.pth`) on **macOS, Linux, Windows, or Raspberry Pi OS** without downloading raw dome datasets or running raymarching:
 
 ```bash
-# macOS (Apple Silicon MPS - ~1.1s):
+# Standard extraction using zero-copy .safetensors (default):
 python3 generate_mesh.py --resolution 128 --output human_head_mesh.ply
 
-# Linux / Windows (NVIDIA CUDA GPU - ~0.8s):
+# Explicitly pass .safetensors checkpoint:
+python3 generate_mesh.py --checkpoint checkpoints/human_head_model.safetensors --resolution 128 --output human_head.ply
+
+# macOS (Apple Silicon MPS - ~0.4s forward pass):
+python3 generate_mesh.py --resolution 128 --output human_head_mesh.ply
+
+# Linux / Windows (NVIDIA CUDA GPU - ~0.3s):
 python3 generate_mesh.py --resolution 128 --output human_head_mesh.ply
 
 # Raspberry Pi OS / Low-Memory CPU (using chunking, <40MB RAM):
@@ -20,9 +26,9 @@ python3 generate_mesh.py --resolution 64 --chunk_size 32 --device cpu --output h
 ```
 
 ### 📦 Minimal Cross-Platform Dependencies
-Only 2 packages required (zero C++ compilation needed):
+Only 3 packages required (zero C++ compilation needed):
 ```bash
-pip install torch scikit-image
+pip install torch safetensors scikit-image
 # (Optional for OBJ format export):
 pip install trimesh
 ```
@@ -59,14 +65,19 @@ python3 cmu_reference/exp_runner.py --conf cmu_reference/confs/human_face_multif
 ## 📦 Directory Structure
 
 ```
-cmu_reference/
-├── confs/
-│   └── human_face_multiface.conf  # PyHocon config for 38-view dome training
-├── exp/
-│   └── human_face_multiface/      # Trained 300k human head mesh & validations
-│       └── gaussian_linearmixture_spatial_black/
-│           ├── checkpoints/
-│           │   └── ckpt_300000.pth # 9.2 MB (Final trained neural model weights)
+.
+├── checkpoints/
+│   └── human_head_model.safetensors # 3.1 MB (Fast zero-copy neural SDF weights)
+├── generate_mesh.py                 # Universal cross-platform mesh generator
+├── requirements.txt                 # Minimal inference dependencies
+├── cmu_reference/
+│   ├── confs/
+│   │   └── human_face_multiface.conf # PyHocon config for 38-view dome training
+│   ├── exp/
+│   │   └── human_face_multiface/     # Trained 300k human head mesh & validations
+│   │       └── gaussian_linearmixture_spatial_black/
+│   │           ├── checkpoints/
+│   │           │   └── ckpt_300000.pth # 9.2 MB (Original PyTorch checkpoint)
 │           ├── depth/             # Viewpoint depth maps
 │           ├── meshes/            # 300k step reconstructed 3D polygon mesh (.ply)
 │           ├── normals/           # Viewpoint surface normal maps

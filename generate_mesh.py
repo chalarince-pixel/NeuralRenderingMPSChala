@@ -93,11 +93,13 @@ class SDFNetwork(nn.Module):
 
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-DEFAULT_CKPT = os.path.join(
-    SCRIPT_DIR,
-    "cmu_reference", "exp", "human_face_multiface",
-    "gaussian_linearmixture_spatial_black", "checkpoints", "ckpt_300000.pth"
-)
+DEFAULT_CKPT = os.path.join(SCRIPT_DIR, "checkpoints", "human_head_model.safetensors")
+if not os.path.exists(DEFAULT_CKPT):
+    DEFAULT_CKPT = os.path.join(
+        SCRIPT_DIR,
+        "cmu_reference", "exp", "human_face_multiface",
+        "gaussian_linearmixture_spatial_black", "checkpoints", "ckpt_300000.pth"
+    )
 
 
 def get_optimal_device(requested_device: str = "auto") -> torch.device:
@@ -126,14 +128,22 @@ def load_sdf_model(checkpoint_path: str, device: torch.device) -> nn.Module:
     print(f"Loading checkpoint: {checkpoint_path}")
     sdf_net = SDFNetwork().to(device)
 
-    # weights_only=False ensures PyTorch 2.4+ loads legacy dictionary archives
-    ckpt = torch.load(checkpoint_path, map_location=device, weights_only=False)
-    if isinstance(ckpt, dict) and "sdf_network_fine" in ckpt:
-        sdf_net.load_state_dict(ckpt["sdf_network_fine"])
-    elif isinstance(ckpt, dict):
-        sdf_net.load_state_dict(ckpt)
+    if checkpoint_path.endswith(".safetensors"):
+        try:
+            from safetensors.torch import load_file
+            ckpt = load_file(checkpoint_path, device=str(device))
+        except ImportError:
+            raise ImportError("safetensors is required to load .safetensors checkpoints: pip install safetensors")
+        sdf_net.load_state_dict(ckpt, strict=False)
     else:
-        raise ValueError(f"Unrecognized checkpoint format in: {checkpoint_path}")
+        # weights_only=False ensures PyTorch 2.4+ loads legacy dictionary archives
+        ckpt = torch.load(checkpoint_path, map_location=device, weights_only=False)
+        if isinstance(ckpt, dict) and "sdf_network_fine" in ckpt:
+            sdf_net.load_state_dict(ckpt["sdf_network_fine"])
+        elif isinstance(ckpt, dict):
+            sdf_net.load_state_dict(ckpt)
+        else:
+            raise ValueError(f"Unrecognized checkpoint format in: {checkpoint_path}")
 
     sdf_net.eval()
     print("SDF Network weights loaded successfully.")
